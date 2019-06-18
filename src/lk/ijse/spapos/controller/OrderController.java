@@ -52,12 +52,12 @@ public class OrderController extends HttpServlet {
 
 
                 JsonObject object = orderdetails.getJsonObject(i);
-                String name = object.getString("odID");
+//                String name = code;
                 String addres = object.getString("itemCode");
                 int qty = Integer.parseInt(object.getString("qty"));
                 double unitPricr = Double.parseDouble(object.getString("unitPricr"));
 
-                OrderDetailDTO orderDetailDTO = new OrderDetailDTO(name,addres,qty,unitPricr);
+                OrderDetailDTO orderDetailDTO = new OrderDetailDTO(code,addres,qty,unitPricr);
 
                 orderDetailDTOS.add(orderDetailDTO);
                 //            for (JsonObject jsonObject1 : orderdetails){
@@ -68,6 +68,8 @@ public class OrderController extends HttpServlet {
             connection = dataSource.getConnection();
 
 
+            connection.setAutoCommit(true);
+
 
             PreparedStatement preparedStatement = connection.prepareStatement("Insert Into Orders VALUES(?,?,?)");
             preparedStatement.setObject(1,code);
@@ -76,7 +78,13 @@ public class OrderController extends HttpServlet {
             boolean result = preparedStatement.executeUpdate()>0;
 
             if (result){
-
+                for (OrderDetailDTO orderDetailDTO:orderDetailDTOS) {
+                    PreparedStatement pr = connection.prepareStatement("INSERT INTO Orderdetail VALUES(?,?,?,?)");
+                    pr.setObject(1,orderDetailDTO.getOdID());
+                    pr.setObject(2,orderDetailDTO.getItemCode());
+                    pr.setObject(3,orderDetailDTO.getQty());
+                    pr.setObject(4,orderDetailDTO.getUnitPricr());
+                }
             }
 
 

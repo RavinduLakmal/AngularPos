@@ -2,6 +2,7 @@ package lk.ijse.spapos.controller;
 
 import javax.annotation.Resource;
 import javax.json.Json;
+import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 
@@ -14,9 +15,7 @@ import javax.sql.DataSource;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 
 @WebServlet(name = "/api/customers/" ,urlPatterns = ("/api/customers"))
 public class CustomerController extends HttpServlet {
@@ -26,6 +25,40 @@ public class CustomerController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        try (PrintWriter out = resp.getWriter()) {
+
+            resp.setContentType("application/json");
+
+            try {
+                Connection connection = dataSource.getConnection();
+
+                Statement stm = connection.createStatement();
+                ResultSet rst = stm.executeQuery("SELECT * FROM Customer");
+
+                JsonArrayBuilder customers = Json.createArrayBuilder();
+
+                while (rst.next()){
+                    String id = rst.getString("id");
+                    String name = rst.getString("name");
+                    String address = rst.getString("address");
+
+                    JsonObject customer = Json.createObjectBuilder().add("id", id)
+                            .add("name", name)
+                            .add("address", address)
+                            .build();
+                    customers.add(customer);
+                }
+
+                out.println(customers.build().toString());
+
+                connection.close();
+            } catch (Exception ex) {
+                resp.sendError(500, ex.getMessage());
+                ex.printStackTrace();
+            }
+
+        }
+
     }
 
     @Override

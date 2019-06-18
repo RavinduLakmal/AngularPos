@@ -2,6 +2,7 @@ package lk.ijse.spapos.controller;
 
 import javax.annotation.Resource;
 import javax.json.Json;
+import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.servlet.ServletException;
@@ -12,9 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 
 @WebServlet(name = "/api/items/" ,urlPatterns = ("/api/items"))
 public class IremController extends HttpServlet {
@@ -24,7 +23,44 @@ public class IremController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        super.doGet(req, resp);
+
+        try (PrintWriter out = resp.getWriter()) {
+
+            resp.setContentType("application/json");
+
+            try {
+                Connection connection = dataSource.getConnection();
+
+                Statement stm = connection.createStatement();
+                ResultSet rst = stm.executeQuery("SELECT * FROM Item");
+
+                JsonArrayBuilder items = Json.createArrayBuilder();
+
+                while (rst.next()){
+                    String code = rst.getString("code");
+                    String description = rst.getString("description");
+                    int qtyOnHand = rst.getInt("qtyOnHand");
+                    double unitPrice = rst.getDouble("unitPrice");
+
+                    JsonObject item = Json.createObjectBuilder()
+                            .add("code", code)
+                            .add("description", description)
+                            .add("qtyOnHand", qtyOnHand)
+                            .add("unitPrice",unitPrice)
+                            .build();
+                    items.add(item);
+                }
+
+                out.println(items.build().toString());
+
+                connection.close();
+            } catch (Exception ex) {
+                resp.sendError(500, ex.getMessage());
+                ex.printStackTrace();
+            }
+
+        }
+
     }
 
     @Override
