@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/JavaEE-4.iml" filepath="$PROJECT_DIR$/JavaEE-4.iml" />
+      <module fileurl="file://E:/windows_document_2019-06-10/angular/my-app3/my-app3.iml" filepath="E:/windows_document_2019-06-10/angular/my-app3/my-app3.iml" />
+    </modules>
+  </component>
+</project>
