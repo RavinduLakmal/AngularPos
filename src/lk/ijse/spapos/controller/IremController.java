@@ -1,10 +1,7 @@
 package lk.ijse.spapos.controller;
 
 import javax.annotation.Resource;
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
+import javax.json.*;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -15,7 +12,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.*;
 
-@WebServlet(name = "/api/items/" ,urlPatterns = ("/api/items"))
+@WebServlet(name = "/api/items", urlPatterns = ("/api/items"))
 public class IremController extends HttpServlet {
 
     @Resource(name = "java:comp/env/jdbc/pool")
@@ -26,39 +23,70 @@ public class IremController extends HttpServlet {
 
         try (PrintWriter out = resp.getWriter()) {
 
-            resp.setContentType("application/json");
+            if (req.getParameter("id") != null) {
+                String id = req.getParameter("id");
 
-            try {
-                Connection connection = dataSource.getConnection();
+                resp.setContentType("application/json");
+                try {
+                    Connection connection = dataSource.getConnection();
+                    PreparedStatement pstm = connection.prepareStatement("SELECT * FROM Item WHERE id=?");
+                    pstm.setObject(1, id);
+                    ResultSet rst = pstm.executeQuery();
 
-                Statement stm = connection.createStatement();
-                ResultSet rst = stm.executeQuery("SELECT * FROM Item");
-
-                JsonArrayBuilder items = Json.createArrayBuilder();
-
-                while (rst.next()){
                     String code = rst.getString("code");
                     String description = rst.getString("description");
                     int qtyOnHand = rst.getInt("qtyOnHand");
                     double unitPrice = rst.getDouble("unitPrice");
 
-                    JsonObject item = Json.createObjectBuilder()
-                            .add("code", code)
-                            .add("description", description)
-                            .add("qtyOnHand", qtyOnHand)
-                            .add("unitPrice",unitPrice)
-                            .build();
-                    items.add(item);
+                    if (rst.next()) {
+                        JsonObjectBuilder ob = Json.createObjectBuilder();
+                        ob.add("code", code)
+                                .add("description", description)
+                                .add("qtyOnHand", qtyOnHand)
+                                .add("unitPrice", unitPrice)
+                                .build();
+                        resp.setContentType("application/json");
+                        out.println(ob.build());
+                    } else {
+                        resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+                    }
+
+                } catch (Exception ex) {
+                    ex.printStackTrace();
                 }
 
-                out.println(items.build().toString());
+            } else {
+                try {
+                    Connection connection = dataSource.getConnection();
 
-                connection.close();
-            } catch (Exception ex) {
-                resp.sendError(500, ex.getMessage());
-                ex.printStackTrace();
+                    Statement stm = connection.createStatement();
+                    ResultSet rst = stm.executeQuery("SELECT * FROM Item");
+
+                    JsonArrayBuilder items = Json.createArrayBuilder();
+
+                    while (rst.next()) {
+                        String code = rst.getString("code");
+                        String description = rst.getString("description");
+                        int qtyOnHand = rst.getInt("qtyOnHand");
+                        double unitPrice = rst.getDouble("unitPrice");
+
+                        JsonObject item = Json.createObjectBuilder()
+                                .add("code", code)
+                                .add("description", description)
+                                .add("qtyOnHand", qtyOnHand)
+                                .add("unitPrice", unitPrice)
+                                .build();
+                        items.add(item);
+                    }
+
+                    out.println(items.build().toString());
+
+                    connection.close();
+                } catch (Exception ex) {
+                    resp.sendError(500, ex.getMessage());
+                    ex.printStackTrace();
+                }
             }
-
         }
 
     }
@@ -67,14 +95,14 @@ public class IremController extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         JsonReader reader = Json.createReader(req.getReader());
-        System.out.println(reader+" Reader ");
+        System.out.println(reader + " Reader ");
         resp.setContentType("application/json");
         PrintWriter out = resp.getWriter();
 
-        Connection connection= null;
+        Connection connection = null;
 
-        try{
-            JsonObject jsonObject= reader.readObject();
+        try {
+            JsonObject jsonObject = reader.readObject();
             String code = jsonObject.getString("code");
             String description = jsonObject.getString("description");
             double unitprice = Double.parseDouble(jsonObject.getString("unitprice"));
@@ -87,22 +115,22 @@ public class IremController extends HttpServlet {
             preparedStatement.setObject(1, code);
             preparedStatement.setObject(2, description);
             preparedStatement.setObject(3, unitprice);
-            preparedStatement.setObject(4,salary);
-            boolean result = preparedStatement.executeUpdate()>0;
+            preparedStatement.setObject(4, salary);
+            boolean result = preparedStatement.executeUpdate() > 0;
 
-            if (result){
+            if (result) {
                 out.println("true result");
-            }else {
+            } else {
                 out.println("false resault");
             }
 
-        }catch (Exception e){
+        } catch (Exception e) {
             e.fillInStackTrace();
             out.println("false exception");
-        }finally {
-            try{
+        } finally {
+            try {
                 connection.close();
-            }catch (SQLException e){
+            } catch (SQLException e) {
                 e.printStackTrace();
             }
             out.close();

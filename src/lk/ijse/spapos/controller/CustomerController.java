@@ -1,11 +1,9 @@
 package lk.ijse.spapos.controller;
 
 import javax.annotation.Resource;
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
+import javax.json.*;
 
+import javax.json.stream.JsonParsingException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -25,39 +23,60 @@ public class CustomerController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+
         try (PrintWriter out = resp.getWriter()) {
 
-            resp.setContentType("application/json");
+            if (req.getParameter("id") != null) {
 
-            try {
-                Connection connection = dataSource.getConnection();
+                String id = req.getParameter("id");
 
-                Statement stm = connection.createStatement();
-                ResultSet rst = stm.executeQuery("SELECT * FROM Customer");
+                try {
+                    Connection connection = dataSource.getConnection();
+                    PreparedStatement pstm = connection.prepareStatement("SELECT * FROM Customer WHERE id=?");
+                    pstm.setObject(1, id);
+                    ResultSet rst = pstm.executeQuery();
 
-                JsonArrayBuilder customers = Json.createArrayBuilder();
+                    if (rst.next()) {
+                        JsonObjectBuilder ob = Json.createObjectBuilder();
+                        ob.add("id", rst.getString(1));
+                        ob.add("name", rst.getString(2));
+                        ob.add("address", rst.getString(3));
+                        resp.setContentType("application/json");
+                        out.println(ob.build());
+                    } else {
+                        resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+                    }
 
-                while (rst.next()){
-                    String id = rst.getString("id");
-                    String name = rst.getString("name");
-                    String address = rst.getString("address");
-
-                    JsonObject customer = Json.createObjectBuilder().add("id", id)
-                            .add("name", name)
-                            .add("address", address)
-                            .build();
-                    customers.add(customer);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
                 }
 
-                out.println(customers.build().toString());
+            }
+            else{
+                try {
+                    Connection connection = dataSource.getConnection();
+                    Statement stm = connection.createStatement();
+                    ResultSet rst = stm.executeQuery("SELECT * FROM Customer");
 
-                connection.close();
-            } catch (Exception ex) {
-                resp.sendError(500, ex.getMessage());
-                ex.printStackTrace();
+                    resp.setContentType("application/json");
+
+                    JsonArrayBuilder ab = Json.createArrayBuilder();
+
+                    while (rst.next()){
+                        JsonObjectBuilder ob = Json.createObjectBuilder();
+                        ob.add("id",rst.getString("id"));
+                        ob.add("name",rst.getString("name"));
+                        ob.add("address",rst.getString("address"));
+                        ab.add(ob.build());
+                    }
+                    out.println(ab.build());
+                }catch (Exception ex){
+                    ex.printStackTrace();
+                }
             }
 
         }
+
 
     }
 
@@ -109,9 +128,48 @@ public class CustomerController extends HttpServlet {
 //        super.doPost(req, resp);
     }
 
+
+
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-//        super.doPut(req, resp);
+        if (req.getParameter("id") != null){
+
+            try {
+                JsonReader reader = Json.createReader(req.getReader());
+                JsonObject customer = reader.readObject();
+
+                String id = customer.getString("id");
+                String name = customer.getString("name");
+                String address = customer.getString("address");
+
+                if (!id.equals(req.getParameter("id"))){
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                    return;
+                }
+
+                Connection connection= dataSource.getConnection();
+                PreparedStatement pstm = connection.prepareStatement("UPDATE Customer SET name=?, address=? WHERE id=?");
+                pstm.setObject(3,id);
+                pstm.setObject(1,name);
+                pstm.setObject(2,address);
+                int affectedRows = pstm.executeUpdate();
+
+                if (affectedRows > 0){
+                    resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
+                }else{
+                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                }
+
+            }catch (JsonParsingException | NullPointerException  ex){
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            }catch (Exception ex){
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            }
+
+
+        }else{
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        }
     }
 
     @Override
