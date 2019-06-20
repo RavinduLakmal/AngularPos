@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.*;
 
-@WebServlet(name = "/api/customers/" ,urlPatterns = ("/api/customers"))
+@WebServlet(name = "/api/customers" ,urlPatterns = ("/api/customers"))
 public class CustomerController extends HttpServlet {
 
     @Resource(name = "java:comp/env/jdbc/pool")
@@ -86,19 +86,19 @@ public class CustomerController extends HttpServlet {
         JsonReader reader = Json.createReader(req.getReader());
         System.out.println(reader+" Reader ");
         resp.setContentType("application/json");
+
         PrintWriter out = resp.getWriter();
-
+        System.out.println(out);
         Connection connection= null;
-
         try{
             JsonObject jsonObject= reader.readObject();
-            String id = jsonObject.getString("id");
+            String id =jsonObject.getString("id") ;
             String name = jsonObject.getString("name");
             String address = jsonObject.getString("address");
             double salary = Double.parseDouble(jsonObject.getString("salary"));
 
             connection = dataSource.getConnection();
-
+            System.out.println(connection+" Ravindu ");
             PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO Customer VALUES (?,?,?,?)");
 
             preparedStatement.setObject(1, id);

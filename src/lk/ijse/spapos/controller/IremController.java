@@ -29,6 +29,7 @@ public class IremController extends HttpServlet {
                 resp.setContentType("application/json");
                 try {
                     Connection connection = dataSource.getConnection();
+                    System.out.println(connection+" Connection ");
                     PreparedStatement pstm = connection.prepareStatement("SELECT * FROM Item WHERE id=?");
                     pstm.setObject(1, id);
                     ResultSet rst = pstm.executeQuery();
