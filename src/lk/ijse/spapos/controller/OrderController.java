@@ -42,9 +42,14 @@ public class OrderController extends HttpServlet {
         try{
             JsonObject jsonObject= reader.readObject();
             String code = jsonObject.getString("odCode");
+            System.out.println(code);
             Date date = Date.valueOf(jsonObject.getString("date"));
+            System.out.println(date);
             String custId = jsonObject.getString("custId");
-            JsonArray orderdetails = jsonObject.getJsonArray("Orderdetails");
+            System.out.println(custId);
+                JsonArray orderdetails = jsonObject.getJsonArray("Orderdetails");
+
+            System.out.println(orderdetails+ " dfsdfdfdf");
 
             List<OrderDetailDTO> orderDetailDTOS = new ArrayList<>();
 
@@ -52,17 +57,18 @@ public class OrderController extends HttpServlet {
 
 
                 JsonObject object = orderdetails.getJsonObject(i);
-//                String name = code;
                 String addres = object.getString("itemCode");
+                System.out.println(addres+" fkvmdmls");
                 int qty = Integer.parseInt(object.getString("qty"));
+                System.out.println(qty+" fdsfdf");
                 double unitPricr = Double.parseDouble(object.getString("unitPricr"));
+                System.out.println(unitPricr+" DSADSDAS");
 
                 OrderDetailDTO orderDetailDTO = new OrderDetailDTO(code,addres,qty,unitPricr);
 
                 orderDetailDTOS.add(orderDetailDTO);
-                //            for (JsonObject jsonObject1 : orderdetails){
-//                jsonObject1.toString();
-//                System.out.println();
+                System.out.println(orderDetailDTO);
+
             }
 
             connection = dataSource.getConnection();
@@ -77,14 +83,23 @@ public class OrderController extends HttpServlet {
             preparedStatement.setObject(3,custId);
             boolean result = preparedStatement.executeUpdate()>0;
 
-            if (result){
+            System.out.println(result+"  result1 ");
+
+            if (result==true){
+                PreparedStatement pr=null;
+                boolean res=false;
                 for (OrderDetailDTO orderDetailDTO:orderDetailDTOS) {
-                    PreparedStatement pr = connection.prepareStatement("INSERT INTO Orderdetail VALUES(?,?,?,?)");
+                    pr = connection.prepareStatement("INSERT INTO Orderdetail VALUES(?,?,?,?)");
                     pr.setObject(1,orderDetailDTO.getOdID());
                     pr.setObject(2,orderDetailDTO.getItemCode());
                     pr.setObject(3,orderDetailDTO.getQty());
                     pr.setObject(4,orderDetailDTO.getUnitPricr());
+                    res=pr.executeUpdate()>0;
                 }
+                System.out.println(res);
+            }
+            else{
+                return;
             }
 
 
